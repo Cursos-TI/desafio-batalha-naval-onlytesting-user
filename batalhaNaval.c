@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 // Desafio Batalha Naval - MateCheck
-// Nível Novato
-// Este código inicial serve como base para o desenvolvimento do sistema de Batalha Naval.
+// Nível Aventureiro
+// Nesta etapa, você irá aprimorar o seu jogo de Batalha Naval adicionando a complexidade de navios posicionados na diagonal.
 
 // Inicializa o tabuleiro com um determinado tamanho (linhas/colunas)
 void inicializar_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro, const int agua)
@@ -46,7 +46,7 @@ int posicionar_navio_horizontal(int tabuleiro[][10], const int tam_tabuleiro, co
 }
 
 /* Verifica se um navio na vertical pode ser posicionado e o posiciona se possível. Para isso, essa função utiliza como parâmetros: o tabuleiro do jogo e o seu tamanho; o tamanho dos navios e a posição deles no tabuleiro (linha e coluna). Retorna erro em caso de sobreposição */
-int posicionar_navio_vertical(int tabuleiro[][10], const int tam_tabuleiro, const int tam_navio, int linha, int coluna, const int navio)
+int posicionar_navio_vertical(int tabuleiro[][10], const int tam_tabuleiro, const int tam_navio, const int linha, const int coluna, const int navio)
 {
   // Verifica se o navio está dentro dos limites do tabuleiro
   if (coluna < 0 || coluna >= tam_tabuleiro || linha < 0 || linha + tam_navio > tam_tabuleiro)
@@ -74,12 +74,72 @@ int posicionar_navio_vertical(int tabuleiro[][10], const int tam_tabuleiro, cons
   return 1;
 }
 
+/* Verifica se um navio na diagonal pode ser posicionado e o posiciona se possível. Para isso, essa função utiliza o parâmetro de direção para definir se o navio está em uma posição diagonal crescente ou descrescente. Retorna erro em caso de sobreposição */
+int posicionar_navio_diagonal(int tabuleiro[][10], const int tam_tabuleiro, const int tam_navio, const int linha, const int coluna, const int navio, const int direcao)
+{
+  // i_vetor_direcao está para linha como j_vetor_direcao está para coluna
+  int i_vetor_direcao, j_vetor_direcao;
+
+  // Constantes responsáveis por conter o valor que define a direção da diagonal
+  const int DIAG_CRESCENTE_VAL = 1;
+  const int DIAG_DECRESCENTE_VAL = 2;
+
+  // Determina os incrementos/decrementos com base na direção
+  if (direcao == DIAG_CRESCENTE_VAL)
+  {
+    i_vetor_direcao = 1;
+    j_vetor_direcao = 1;
+  }
+  else if (direcao == DIAG_DECRESCENTE_VAL)
+  {
+    i_vetor_direcao = 1;
+    j_vetor_direcao = -1;
+  }
+  else
+  {
+    printf("ERRO: Direção Diagonal inválida!\n");
+    return 0;
+  }
+
+  /* Loop para verificar a posição de inserção do navio e prevenir que ele seja alocado em coordenadas fora dos limites ou que gere sobreposição com outros navios */
+  for (int k = 0; k < tam_navio; k++)
+  {
+    int r = linha + k * i_vetor_direcao;  // Nova linha
+    int c = coluna + k * j_vetor_direcao; // Nova coluna
+
+    // Verifica se o navio está dentro dos limites do tabuleiro
+    if (r < 0 || r >= tam_tabuleiro || c < 0 || c >= tam_tabuleiro)
+    {
+      printf("ERRO: Navio Diagonal %s fora dos limites do tabuleiro! (Posição de erro: [%d, %d])\n", (direcao == DIAG_CRESCENTE_VAL ? "Crescente" : "Decrescente"), r, c);
+      return 0;
+    }
+
+    // Verifica se há sobreposição entre navios
+    if (tabuleiro[r][c] == navio)
+    {
+      printf("ERRO: Navio Diagonal %s se sobrepõe a outro navio! (Posição de erro: [%d, %d])\n", (direcao == DIAG_CRESCENTE_VAL ? "Crescente" : "Decrescente"), r, c);
+      return 0;
+    }
+  }
+
+  // Posiciona o navio se ele passar em todas as avaliações
+  for (int k = 0; k < tam_navio; k++)
+  {
+    int r = linha + k * i_vetor_direcao;
+    int c = coluna + k * j_vetor_direcao;
+    tabuleiro[r][c] = navio;
+  }
+
+  printf("SUCESSO: Navio Diagonal %s posicionado com início na %d° linha, %d° coluna\n", (direcao == DIAG_CRESCENTE_VAL ? "Crescente" : "Decrescente"), linha, coluna);
+  return 1;
+}
+
 /* Exibe o tabuleiro completo no terminal tendo como parâmetros o próprio tabuleiro e seu tamanho */
 void exibir_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro)
 {
   printf("\nBatalha Naval:\n\n");
 
-  /* Imprime o cabeçalho das colunas. Esse cabeçalho, nesse caso, vai de 0 a 9 e serve de guia e mapeamento das coordenadas para que fique mais fácil identificá-las e ter uma melhor noção do posicionamento dos navios */
+  // Imprime o cabeçalho das colunas
   printf("   ");
   for (int j = 0; j < tam_tabuleiro; j++)
   {
@@ -87,7 +147,7 @@ void exibir_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro)
   }
   printf("\n");
 
-  /* Imprime o cabeçalho das linhas. Esse cabeçalho, nesse caso, vai de 0 a 9 e serve de guia e mapeamento das coordenadas para que fique mais fácil identificá-las e ter uma melhor noção do posicionamento dos navios */
+  // Imprime o cabeçalho das linhas
   for (int i = 0; i < tam_tabuleiro; i++)
   {
     printf("%2d ", i);
@@ -101,33 +161,36 @@ void exibir_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro)
 
 int main()
 {
-  /* Declaração das Constantes necessárias para criação do tabuleiro e posicionamento dos navios */
+  // Declaração das Constantes
   const int AGUA = 0;
   const int NAVIO = 3;
   const int TAMANHO_TABULEIRO = 10;
   const int TAMANHO_NAVIO = 3;
+  const int DIAGONAL_CRESCENTE = 1;
+  const int DIAGONAL_DECRESCENTE = 2;
 
-  /* Definição do tabuleiro como o tamanho 10x10
-   O valor 10 é passado diretamente na declaração, mas usamos a constante
-   TAMANHO_TABULEIRO para as funções, dessa forma temos mais controle e flexibilidade */
   int tabuleiro[10][10];
 
   // Inicializa o tabuleiro
   inicializar_tabuleiro(tabuleiro, TAMANHO_TABULEIRO, AGUA);
 
-  // Coordenadas dos navios
-  int navio_h_lin = 2;
-  int navio_h_col = 1;
-
-  int navio_v_lin = 5;
-  int navio_v_col = 6;
-
   // Posiciona os navios no tabuleiro, passando as constantes como parâmetros
-  // Navio Horizontal: [2, 1], [2, 2], [2, 3] - Colunas 1, 2 e 3 dentro de uma mesma linha (2)
-  posicionar_navio_horizontal(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, navio_h_lin, navio_h_col, NAVIO);
 
-  // Navio Vertical: [5, 6], [6, 6], [7, 6] - Linhas 5, 6 e 7 dentro de uma mesma coluna (6)
-  posicionar_navio_vertical(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, navio_v_lin, navio_v_col, NAVIO);
+  // Navio 1: Horizontal
+  // Posições: [2, 1], [2, 2], [2, 3]
+  posicionar_navio_horizontal(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, 2, 1, NAVIO);
+
+  // Navio 2: Vertical
+  // Posições: [5, 6], [6, 6], [7, 6]
+  posicionar_navio_vertical(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, 5, 6, NAVIO);
+
+  // Navio 3: Diagonal Crescente
+  // Início: [6, 0]. Posições: [6, 0], [7, 1], [8, 2]
+  posicionar_navio_diagonal(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, 6, 0, NAVIO, DIAGONAL_CRESCENTE);
+
+  // Navio 4: Diagonal Decrescente
+  // Início: [1, 8]. Posições: [1, 8], [2, 7], [3, 6]
+  posicionar_navio_diagonal(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, 1, 8, NAVIO, DIAGONAL_DECRESCENTE);
 
   // Chamada à função responsável por exibir o tabuleiro completo, passando a constante como parâmetro
   exibir_tabuleiro(tabuleiro, TAMANHO_TABULEIRO);
