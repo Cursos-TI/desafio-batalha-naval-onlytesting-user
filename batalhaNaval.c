@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 // Desafio Batalha Naval - MateCheck
-// Nível Aventureiro
-// Nesta etapa, você irá aprimorar o seu jogo de Batalha Naval adicionando a complexidade de navios posicionados na diagonal.
+// Nível Mestre
+// Neste desafio final, você adicionará um toque estratégico ao seu jogo de Batalha Naval, implementando habilidades especiais com áreas de efeito distintas.
 
 // Inicializa o tabuleiro com um determinado tamanho (linhas/colunas)
 void inicializar_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro, const int agua)
@@ -134,7 +135,101 @@ int posicionar_navio_diagonal(int tabuleiro[][10], const int tam_tabuleiro, cons
   return 1;
 }
 
-/* Exibe o tabuleiro completo no terminal tendo como parâmetros o próprio tabuleiro e seu tamanho */
+// Aplica o padrão de ataque em formato de Cone
+void ataque_cone(int tabuleiro[][10], const int tam_tabuleiro, const int linha_origem, const int coluna_origem, const int AREA_AFETADA)
+{
+  // Define a altura do Cone
+  const int ALTURA = 2; // Para um cone com 3 linhas de altura
+
+  printf("\n▲ Ataque Cone (Coordenadas do Topo: [%d, %d], Altura do Cone: %d)\n", linha_origem, coluna_origem, ALTURA);
+
+  /* Os loops aninhados iteram sobre a área do cone, de linha_origem até linha_origem + ALTURA */
+  for (int i = linha_origem; i <= linha_origem + ALTURA; i++)
+  {
+    // Calcula a distância vertical
+    int dist_vertical = i - linha_origem;
+
+    // Loop responsável pela preenchimento horizontal
+    for (int j = coluna_origem - dist_vertical; j <= coluna_origem + dist_vertical; j++)
+    {
+      // Verifica se a posição está dentro dos limites do tabuleiro
+      if (i >= 0 && i < tam_tabuleiro && j >= 0 && j < tam_tabuleiro)
+      {
+        /* Verifica se na posição atual já não há um navio (3), caso não, posiciona a área afetada */
+        if (tabuleiro[i][j] != 3)
+        {
+          tabuleiro[i][j] = AREA_AFETADA;
+        }
+      }
+    }
+  }
+}
+
+// Aplica o padrão de ataque em formato de Cruz
+void ataque_cruz(int tabuleiro[][10], const int tam_tabuleiro, const int linha_origem, const int coluna_origem, const int AREA_AFETADA)
+{
+  // Define o raio da Cruz
+  const int RAIO = 2;
+
+  printf("\n+ Ataque Cruz (Coordenadas do Centro: [%d, %d], Raio da Cruz: %d)\n", linha_origem, coluna_origem, RAIO);
+
+  /* Os loops aninhados iteram sobre a área ao redor do ponto de origem tendo como baso o tamanho do raio definido para a Cruz */
+  for (int i = linha_origem - RAIO; i <= linha_origem + RAIO; i++)
+  {
+    for (int j = coluna_origem - RAIO; j <= coluna_origem + RAIO; j++)
+    {
+      // Verifica se a posição está dentro dos limites do tabuleiro
+      if (i >= 0 && i < tam_tabuleiro && j >= 0 && j < tam_tabuleiro)
+      {
+        // A condicional abaixo é responsável por criar a forma de CRUZ:
+        if (i == linha_origem || j == coluna_origem)
+        {
+          /* Verifica se na posição atual já não há um navio (3), caso não, posiciona a área afetada */
+          if (tabuleiro[i][j] != 3)
+          {
+            tabuleiro[i][j] = AREA_AFETADA;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Aplica um padrão de ataque em formato de Octaedro/Losango */
+void ataque_octaedro(int tabuleiro[][10], const int tam_tabuleiro, const int linha_origem, const int coluna_origem, const int AREA_AFETADA)
+{
+  // Define a dimensão do Losango
+  const int AREA = 2;
+
+  printf("\n◆ Ataque Octaedro (Coordenadas do Centro: [%d, %d], Área: %d)\n", linha_origem, coluna_origem, AREA);
+
+  // Os loops aninhados iteram sobre o quadrado ao redor do ponto de origem
+  for (int i = linha_origem - AREA; i <= linha_origem + AREA; i++)
+  {
+    for (int j = coluna_origem - AREA; j <= coluna_origem + AREA; j++)
+    {
+      // Verifica se a posição está dentro dos limites do tabuleiro
+      if (i >= 0 && i < tam_tabuleiro && j >= 0 && j < tam_tabuleiro)
+      {
+        /* Calcula a distância vertical e horizontal do losango a partir do centro */
+        int dist_vertical = abs(i - linha_origem);
+        int dist_horizontal = abs(j - coluna_origem);
+
+        // Impede o excedimento em relação a AREA:
+        if (dist_vertical + dist_horizontal <= AREA)
+        {
+          /* Verifica se na posição atual já não há um navio (3), caso não, posiciona a área afetada */
+          if (tabuleiro[i][j] != 3)
+          {
+            tabuleiro[i][j] = AREA_AFETADA;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Exibe o tabuleiro completo no terminal, utilizando diferentes caracteres para representar a aguá (~), os navios (T) e área afetada (X). Caso seja passado um valor não mapeado, ele retorna as coordendas para inspeção */
 void exibir_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro)
 {
   printf("\nBatalha Naval:\n\n");
@@ -153,7 +248,23 @@ void exibir_tabuleiro(int tabuleiro[][10], const int tam_tabuleiro)
     printf("%2d ", i);
     for (int j = 0; j < tam_tabuleiro; j++)
     {
-      printf("%2d ", tabuleiro[i][j]);
+      /* Usa caracteres diferentes para cada elemento do jogo para melhor visualização */
+      if (tabuleiro[i][j] == 0)
+      {
+        printf(" ~ "); // Se for "Água"
+      }
+      else if (tabuleiro[i][j] == 3)
+      {
+        printf(" T "); // Se for "Navio"
+      }
+      else if (tabuleiro[i][j] == 1)
+      {
+        printf(" X "); // Se for "Área Afetada""
+      }
+      else
+      {
+        printf("%2d ", tabuleiro[i][j]); // Se for um valor não mapeado
+      }
     }
     printf("\n");
   }
@@ -166,6 +277,8 @@ int main()
   const int NAVIO = 3;
   const int TAMANHO_TABULEIRO = 10;
   const int TAMANHO_NAVIO = 3;
+  const int AREA_AFETADA = 1;
+  // Para construção de Navios Diagonais
   const int DIAGONAL_CRESCENTE = 1;
   const int DIAGONAL_DECRESCENTE = 2;
 
@@ -174,7 +287,7 @@ int main()
   // Inicializa o tabuleiro
   inicializar_tabuleiro(tabuleiro, TAMANHO_TABULEIRO, AGUA);
 
-  // Posiciona os navios no tabuleiro, passando as constantes como parâmetros
+  // Posiciona os navios no tabuleiro, passando as constantes como parâmetros:
 
   // Navio 1: Horizontal
   // Posições: [2, 1], [2, 2], [2, 3]
@@ -191,6 +304,17 @@ int main()
   // Navio 4: Diagonal Decrescente
   // Início: [1, 8]. Posições: [1, 8], [2, 7], [3, 6]
   posicionar_navio_diagonal(tabuleiro, TAMANHO_TABULEIRO, TAMANHO_NAVIO, 1, 8, NAVIO, DIAGONAL_DECRESCENTE);
+
+  // Chamada à função responsável por aplicar o ataque de Cone:
+  /* A linha abaixo foi comentada apenas para não atrapalhar a visualização no terminal. Caso queira utilizá-la, descomente */
+  // ataque_cone(tabuleiro, TAMANHO_TABULEIRO, 3, 2, AREA_AFETADA);
+
+  // Chamada à função responsável por aplicar o ataque de Cruz:
+  /* A linha abaixo foi comentada apenas para não atrapalhar a visualização no terminal. Caso queira utilizá-la, descomente */
+  // ataque_cruz(tabuleiro, TAMANHO_TABULEIRO, 4, 4, AREA_AFETADA);
+
+  // Chamada à função responsável por aplicar o ataque de Octaedro:
+  ataque_octaedro(tabuleiro, TAMANHO_TABULEIRO, 4, 4, AREA_AFETADA);
 
   // Chamada à função responsável por exibir o tabuleiro completo, passando a constante como parâmetro
   exibir_tabuleiro(tabuleiro, TAMANHO_TABULEIRO);
